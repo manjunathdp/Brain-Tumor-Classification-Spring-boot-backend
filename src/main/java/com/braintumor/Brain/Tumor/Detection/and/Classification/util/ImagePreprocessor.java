@@ -1,6 +1,5 @@
 package com.braintumor.Brain.Tumor.Detection.and.Classification.util;
 
-
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -8,6 +7,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Objects;
 
 public class ImagePreprocessor {
 
@@ -21,7 +21,7 @@ public class ImagePreprocessor {
 
         // Normalize pixel values to [0, 1] and flatten the image into a byte array
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(resizedImg, "jpg", baos);
+        ImageIO.write(resizedImg, Objects.requireNonNull(file.getContentType()).endsWith("png") ? "png" : "jpg", baos);
 
         return baos.toByteArray();
     }
