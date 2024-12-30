@@ -1,5 +1,6 @@
 package com.braintumor.Brain.Tumor.Detection.and.Classification.service;
 
+import com.braintumor.Brain.Tumor.Detection.and.Classification.dto.PredictionResponse;
 import com.braintumor.Brain.Tumor.Detection.and.Classification.util.ImagePreprocessor;
 import com.braintumor.Brain.Tumor.Detection.and.Classification.util.TensorFlowPayloadBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,8 +18,9 @@ import java.util.Map;
 public class BrainTumorService {
 
     private static final String MODEL_URL = "http://localhost:8501/v1/models/densenet_brain_tumor:predict";
+    private static final String[] CLASS_LABELS = {"glioma", "meningioma", "no_tumor", "pituitary"};
 
-    public Map<String, Object> predict(MultipartFile file) throws IOException {
+    public PredictionResponse predict(MultipartFile file) throws IOException {
         // Preprocess the image
         byte[] processedImage = ImagePreprocessor.preprocessImage(file);
 
@@ -36,11 +38,30 @@ public class BrainTumorService {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode response = mapper.readTree(connection.getInputStream());
 
-        // Parse response and return results
-        Map<String, Object> results = new HashMap<>();
-        JsonNode predictions = response.get("predictions");
-        results.put("predictions", predictions);
+        // Parse response
+        JsonNode predictionsArray = response.get("predictions").get(0); // Get first prediction
+        if (predictionsArray == null || predictionsArray.size() != CLASS_LABELS.length) {
+            throw new IOException("Invalid response from model.");
+        }
 
-        return results;
+        // Map class labels to probabilities
+        Map<String, Double> labeledPredictions = new HashMap<>();
+        double highestProbability = -1.0;
+        String highestClass = null;
+
+        for (int i = 0; i < CLASS_LABELS.length; i++) {
+            double probability = predictionsArray.get(i).asDouble();
+            labeledPredictions.put(CLASS_LABELS[i], probability);
+            if (probability > highestProbability) {
+                highestProbability = probability;
+                highestClass = CLASS_LABELS[i];
+            }
+        }
+
+        // Build the response object
+        Map<String, Double> highestProbabilityMap = new HashMap<>();
+        highestProbabilityMap.put(highestClass, highestProbability);
+
+        return new PredictionResponse(labeledPredictions, highestProbabilityMap);
     }
 }
