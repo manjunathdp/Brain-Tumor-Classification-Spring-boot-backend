@@ -1,5 +1,6 @@
 package com.braintumor.Brain.Tumor.Detection.and.Classification.controller;
 
+import com.braintumor.Brain.Tumor.Detection.and.Classification.dto.PredictionResponse;
 import com.braintumor.Brain.Tumor.Detection.and.Classification.service.BrainTumorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,8 @@ public class BrainTumorController {
     @PostMapping("/predict")
     public ResponseEntity<?> predictTumor(@RequestParam("image") MultipartFile file) {
         try {
-            return ResponseEntity.ok(brainTumorService.predict(file));
+            PredictionResponse response = brainTumorService.predict(file);
+            return ResponseEntity.ok(response);
         } catch (IOException e) {
             return ResponseEntity.badRequest().body("Error processing image: " + e.getMessage());
         }
